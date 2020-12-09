@@ -48,10 +48,21 @@ game_titles <- table_out[[3]][,2]
 ## GOtta pull the specific links from the table I selected
 ```{r}
 tier_games_url <- read_html("https://www.eventhubs.com/tiers/")
+
+
+
 tbls <- html_nodes(tier_games_url, "table") 
+
+all_games <- tbls[3] %>%
+      html_nodes("td a") %>%
+      html_attr('href')
 
 table_out <- tbls %>% html_table()
 game_titles <- table_out[[3]][,2]
+
+game_links <- paste0("https://www.eventhubs.com", all_games)
+## Remove extra /
+game_links <- unique(gsub("[/]$", "",game_links))
 ```
 
 ## GOtta pull the specific links from the table I selected
