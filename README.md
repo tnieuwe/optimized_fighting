@@ -3,8 +3,8 @@ An R project to determine who is an optimal secondary character in fighting game
 
 
 ## Goals
-- [ ] Get a simple version of the analysis for a single character from a single game (Birdie)
-- [ ] Get the matchup matrix for a single game (SFV)
+- [x] Get a simple version of the analysis for a single character from a single game (Birdie)
+- [x] Get the matchup matrix for a single game (SFV)
 - [ ] Find the best secondary for a single chaaracter (Birdie)
 - [ ] Get the shiny app to work on just one game (SFV)
 - [ ] Incorporate other games and contact reddit?
