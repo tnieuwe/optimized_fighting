@@ -1,0 +1,128 @@
+---
+title: "Birdie Webscrape"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(rvest)
+
+```
+Get Birdie Webpage
+```{r}
+## Get webpage
+webpage <- read_html("https://www.eventhubs.com/tiers/sf5/character/birdie/")
+
+##Get tables of interest
+tbls <- html_nodes(webpage, "table") 
+
+table_out <- tbls %>% html_table()
+
+filter_table <- table_out[1:3]
+## Bind tables of interest
+birdie_table <- do.call(rbind, filter_table)
+
+
+birdie_table
+```
+
+## Notes/idea
+- Maybe weight on the amount of votes each matchup gets
+We can use each games page to scrape for chracter names
+
+Prepare birdie table for being a part of the 
+```{r}
+birdie_table %>% select(Character, `Match avg.`) %>%
+  column_to_rownames(var = "Character") %>%
+  rename(Birdie = `Match avg.`)
+```
+Scrape the names of all the games
+```{r}
+tier_games_url <- read_html("https://www.eventhubs.com/tiers/")
+tbls <- html_nodes(tier_games_url, "table") 
+
+table_out <- tbls %>% html_table()
+game_titles <- table_out[[3]][,2]
+```
+## GOtta pull the specific links from the table I selected
+```{r}
+tier_games_url <- read_html("https://www.eventhubs.com/tiers/")
+tbls <- html_nodes(tier_games_url, "table") 
+
+table_out <- tbls %>% html_table()
+game_titles <- table_out[[3]][,2]
+```
+
+## GOtta pull the specific links from the table I selected
+```{r}
+sfv_url <- read_html("https://www.eventhubs.com/tiers/sf5/")
+tbls <- html_nodes(sfv_url, "table") 
+
+table_out <- tbls %>% html_table()
+teir_table <- table_out[[1]]
+
+char_names <- teir_table$Character
+```
+
+The code below uses the SFV tier page to got through the data
+```{r}
+## Test section
+char <- char_names[2]
+
+#final_table <- NULL
+
+## For loop goes through each characters webpage and scrapes their data
+
+for (char in char_names) {
+  ## Catch Rmika and Bison
+  char_url <- gsub(". ", "-", char)
+  ## Catch Fang, ugh
+  if (str_count(char, "[.]") >= 2) {
+    char_url <- gsub("[.]", "", char)
+  }
+  #Get the html and pull out the tables
+  html_hold <- paste0("https://www.eventhubs.com/tiers/sf5/character/",char_url,"/")
+  webpage <- read_html(html_hold)
+  
+  tbls <- html_nodes(webpage, "table") 
+  
+  table_out <- tbls %>% html_table()
+  ## Filter tables specifically to tables that include characters 
+  filter_table <- table_out[lapply(table_out,
+                                   function(x){colnames(x)[2]}) == "Character"]
+  
+  
+  results_table <- do.call(rbind, filter_table)
+  ## Generate the column that will be added into the final frame
+  final_column <- results_table %>% select(Character, `Match avg.`) %>%
+                    column_to_rownames(var = "Character")
+  colnames(final_column) <- char
+  ## If this is the first column we add an extra row including the current
+  ## character as an NA. That column then becomes the first `final_table`
+  if (char == char_names[1]) {
+    missing_col <- NA
+    final_column <- rbind(final_column, missing_col)
+    rownames(final_column)[nrow(final_column)]  <- char
+    final_table <- final_column
+  }else{
+    ## Else just bind the tables together after properly sorting on rownames
+    ind <- match(rownames(final_table), rownames(final_column))
+    sorted_col <- final_column[ind,,drop = F]
+    final_table <- cbind(final_table,sorted_col)
+  }
+}
+#final_table
+## Order rows on columns (tier order)
+ind <- match(colnames(final_table), rownames(final_table))
+
+ordered_final_table <- final_table[ind,] 
+
+## Print final tables
+ordered_final_table
+
+
+
+
+```
+
