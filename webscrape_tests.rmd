@@ -122,7 +122,100 @@ ordered_final_table <- final_table[ind,]
 ordered_final_table
 
 
+hist(as.matrix(ordered_final_table))
+
+## I want to get a histogram of everything
+hist_of_chars <- lapply(ordered_final_table, FUN = function(x){hist(x, main = names(x))})
 
 
+
+```
+
+Best Secondary for all Characters V0.1
+
+```{r}
+## Testing out stuff
+ordered_final_table[,"Birdie", drop = FALSE]
+
+k <- which(colnames(ordered_final_table) %in% "Birdie")
+
+## The for loop below goes through each character and compares their matchup 
+## spread to all other characters. If the secondary has better matchuos the  
+## score will be higher. Otherwise the score will be low. This still results
+## in a pseudo tier list, but a later function deals with it
+
+for (k in seq(nrow(ordered_final_table) )) {
+  ## Get char data and car columns
+  char = colnames(ordered_final_table)[k]
+  loop_table <- ordered_final_table[,-k]
+  compare_col <-  ordered_final_table[,k,drop = FALSE]
+  ## This apply isn't what we want it basically sorts on a pseudo tier list
+  ## I need to find a way to properly do this with weighting peoples scores
+     #secondary_out <- apply(loop_table, 2, function(x){sum(abs(compare_col - x),na.rm = T)})
+  ## Idea, if birdie has a matchup that is 5.5 and Vega is 5.2 it should result in -0.3 to the score
+  ## and if birdie has a matchup that is 4.8 and vega is 5 it should add .2
+  
+  ## This apply compares the loops character to all other characters, finding the
+  ## difference between their matchup spread, if their matchups are more favorable
+  ## they get a postive score, if less favorable they get a negative score
+  ## This score is then added together to determine how well the other characters
+  ## compliments the main character of the loop.
+  secondary_out <- apply(loop_table, 2, function(x){sum(-(compare_col - x),na.rm = T)})
+  ## Fixing names
+  secondary_out <- c(NA, secondary_out)
+  names(secondary_out)[1] <- char
+  if (k == 1) {
+    #Make table
+    secondary_table <- as.data.frame(secondary_out)
+    colnames(secondary_table)[k] <- char
+  }else{
+    #Sort table so it fits the laready made table
+    ind <- match(rownames(secondary_table), names(secondary_out))
+    sorted_sec <- secondary_out[ind]
+    secondary_table <- cbind(secondary_table, sorted_sec)
+    colnames(secondary_table)[k] <- char
+  }
+  
+}
+
+## The table of secondaries
+secondary_table
+
+## Testing data
+(cbind(compare_col, ordered_final_table[,"Akuma"]))
+sum(-(compare_col - ordered_final_table[,"Vega"]), na.rm = T)
+
+## Function to get personal secondary table
+
+secondary_ordered <- function(second_tabl, char){
+  ### By using the previously generated table we can use this functiont to select
+  ### a character and pull their best secondaries, and how the tier list changes
+  ### compared to the optimal secondary list
+  
+  ## Pull main character, order on decreasing, remove main character
+  temp_tab <- second_tabl[,char, drop = FALSE]
+  temp_tab <- temp_tab[order(temp_tab,decreasing = T),, drop = FALSE]
+  temp_tab <- temp_tab[!is.na(temp_tab),,drop = FALSE]
+  ## Get tier list, but remove character again
+  tier_filt <- rownames(second_tabl)[!(rownames(second_tabl) %in% char)]
+  ## Combine numeric with teir list, and make sorted secondary list a column
+  temp_tab <- cbind(temp_tab, tier_filt)
+  temp_tab <- rownames_to_column(temp_tab, "Secondary Rank")
+  colnames(temp_tab)[2:3] <- c("Secondary Score", "Current Tier List")
+  ## Move around columns
+  temp_tab <- select(temp_tab, `Secondary Score`, `Secondary Rank`, `Current Tier List`)
+  ## Get the secondary rank change when compared to tier list
+  `Tier Rank Change` <- match(temp_tab[,2], temp_tab[,3])- seq(nrow(temp_tab))
+  ## Bind data together
+  temp_tab <- cbind(temp_tab, `Tier Rank Change`) #%>%
+    #mutate(`Tier Rank Change` = ifelse(`Current Tier List` == char, NA, `Tier Rank Change`))
+  ## Return final output
+  return(temp_tab)
+  }
+
+secondary_ordered(secondary_table, "Birdie")
+secondary_ordered(secondary_table, "Sakura")
+secondary_ordered(secondary_table, "Akuma")
+secondary_ordered(secondary_table, "Vega")
 ```
 
