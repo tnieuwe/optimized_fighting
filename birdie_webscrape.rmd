@@ -1,0 +1,36 @@
+---
+title: "Birdie Webscrape"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(rvest)
+
+```
+Get Birdie Webpage
+```{r}
+webpage <- read_html("https://www.eventhubs.com/tiers/sf5/character/birdie/")
+
+tbls <- html_nodes(webpage, "table") 
+
+table_out <- tbls %>% html_table()
+
+#tbls %>% xml_find_all("//tr[2]/td") %>% html_text()
+
+filter_table <- table_out[1:3]
+
+birdie_table <- do.call(rbind, filter_table)
+
+
+birdie_table
+```
+
+## Notes
+Maybe weight on the amount of votes each matchup gets
+
+```{r}
+birdie_table
+```
+
