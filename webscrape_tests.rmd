@@ -236,3 +236,120 @@ secondary_ordered(secondary_table, "Akuma")
 secondary_ordered(secondary_table, "Vega")
 ```
 
+Mega Loop
+
+## GOtta pull the specific links from the table I selected
+```{r}
+tier_games_url <- read_html("https://www.eventhubs.com/tiers/")
+
+
+
+tbls <- html_nodes(tier_games_url, "table") 
+
+all_games <- tbls[3] %>%
+      html_nodes("td a") %>%
+      html_attr('href')
+
+table_out <- tbls %>% html_table()
+game_titles <- table_out[[3]][,2]
+
+game_links <- paste0("https://www.eventhubs.com", all_games)
+## Remove extra /
+game_links <- unique(gsub("[/]$", "",game_links))
+```
+
+## GOtta pull the specific links from the table I selected
+```{r}
+
+game_chars_list <- list()
+game_chars_name <- list()
+for (k in seq(game_links)) {
+  game_title <- game_titles[k]
+  game_link <- game_links[k]
+
+
+  game_url <- read_html(game_link)
+  tbls <- html_nodes(game_url, "table") 
+  
+  
+  all_characters <- tbls[1] %>%
+        html_nodes("td a") %>%
+        html_attr('href')
+  
+  
+  character_links <- paste0("https://www.eventhubs.com", all_characters)
+  ## Remove extra /votes
+  character_links <- character_links[!str_detect(character_links, "/vote")]
+  game_chars_list[[game_title]] <- character_links
+  
+  table_out <- tbls %>% html_table()
+  teir_table <- table_out[[1]]
+  
+  game_chars_name[[game_title]] <- teir_table$Character
+}
+names(game_chars_list)
+game_chars_list["Super Smash Bros. Melee"]
+```
+
+
+```{r}
+
+all_character_matrix <- list()
+skip_games <- c("Marvel vs. Capcom 2", "Skullgirls 2nd Encore",
+                "Ultimate Marvel vs. Capcom 3",
+                "Tatsunoko vs. Capcom", "Under Night In-Birth Exe:Late[st]")
+for (j in seq(game_chars_list)) {
+  game_name <- names(game_chars_list)[j]
+  if (game_name %in% skip_games) {
+    next
+  }
+    for (k in seq(game_chars_list[[j]])) {
+
+  char_html = game_chars_list[[j]][k]
+  char = game_chars_name[[j]][k]
+  
+  #Get the html and pull out the tables
+  #html_hold <- character_links[k]
+  webpage <- read_html(char_html)
+  
+  tbls <- html_nodes(webpage, "table") 
+  
+  table_out <- tbls %>% html_table()
+  ## Filter tables specifically to tables that include characters 
+  filter_table <- table_out[lapply(table_out,
+                                   function(x){colnames(x)[2]}) == "Character"]
+  
+  
+  results_table <- do.call(rbind, filter_table)
+  #colnames(results_table) <- c("Character", "match avg.")
+  ## Generate the column that will be added into the final frame
+  final_column <- results_table %>% select(Character, `Match avg.`) %>%
+                    column_to_rownames(var = "Character")
+  colnames(final_column) <- char
+  ## If this is the first column we add an extra row including the current
+  ## character as an NA. That column then becomes the first `final_table`
+  if (char == game_chars_name[[j]][1]) {
+    missing_col <- NA
+    final_column <- rbind(final_column, missing_col)
+    rownames(final_column)[nrow(final_column)]  <- char
+    final_table <- final_column
+  }else{
+    ## Else just bind the tables together after properly sorting on rownames
+    ind <- match(rownames(final_table), rownames(final_column))
+    sorted_col <- final_column[ind,,drop = F]
+    final_table <- cbind(final_table,sorted_col)
+  }
+  
+
+  }
+  ind <- match(colnames(final_table), rownames(final_table))
+
+  ordered_final_table <- final_table[ind,] 
+  
+  all_character_matrix[[game_name]] <- ordered_final_table
+  
+}
+
+save(all_character_matrix, file = "all_tier_matrices.rda")
+```
+
