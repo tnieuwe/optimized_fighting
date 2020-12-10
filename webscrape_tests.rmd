@@ -70,6 +70,16 @@ game_links <- unique(gsub("[/]$", "",game_links))
 sfv_url <- read_html("https://www.eventhubs.com/tiers/sf5/")
 tbls <- html_nodes(sfv_url, "table") 
 
+
+all_characters <- tbls[1] %>%
+      html_nodes("td a") %>%
+      html_attr('href')
+
+
+character_links <- paste0("https://www.eventhubs.com", all_characters)
+## Remove extra /votes
+character_links <- character_links[!str_detect(character_links, "/vote")]
+
 table_out <- tbls %>% html_table()
 teir_table <- table_out[[1]]
 
@@ -85,15 +95,11 @@ char <- char_names[2]
 
 ## For loop goes through each characters webpage and scrapes their data
 
-for (char in char_names) {
-  ## Catch Rmika and Bison
-  char_url <- gsub(". ", "-", char)
-  ## Catch Fang, ugh
-  if (str_count(char, "[.]") >= 2) {
-    char_url <- gsub("[.]", "", char)
-  }
+for (k in seq(char_names)) {
+  char = char_names[k]
+  
   #Get the html and pull out the tables
-  html_hold <- paste0("https://www.eventhubs.com/tiers/sf5/character/",char_url,"/")
+  html_hold <- character_links[k]
   webpage <- read_html(html_hold)
   
   tbls <- html_nodes(webpage, "table") 
