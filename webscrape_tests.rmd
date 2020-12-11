@@ -403,8 +403,31 @@ for (j in seq(all_character_matrix)) {
 head(second_matrix_games)
 
 
-secondary_ordered(second_matrix_games$`Project M`, "Wario")
+secondary_ordered(second_matrix_games$`Guilty Gear Xrd REV 2`, "Potemkin")
 
 save(second_matrix_games, file = "secondary_matrix_all_games.rda")
+```
+Character comparison function
+```{r}
+game_matrix <- all_character_matrix$`Guilty Gear Xrd REV 2`
+character_1 <- "Potemkin"
+character_2 <- "Slayer"
+secondary_comparison <- function(game_matrix, character_1, character_2){
+  temp_dat <- as.data.frame(game_matrix[,c(character_1, character_2)])
+  temp_dat <- temp_dat[!(rownames(temp_dat) %in% c(character_1, character_2)),]
+  temp_dat <- cbind(temp_dat, temp_dat[[2]] - temp_dat[[1]])
+  colnames(temp_dat)[3] <- "secondary gains"
+  
+  return(temp_dat)
+}
+
+
+secondary_comparison(all_character_matrix$`Street Fighter 5: Champion Edition`,
+                     "Sakura",
+                     "Sagat")
+
+secondary_comparison(all_character_matrix$`Street Fighter 5: Champion Edition`,
+                     "Sakura",
+                     "Abigail")
 ```
 
