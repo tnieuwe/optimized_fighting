@@ -431,3 +431,85 @@ secondary_comparison(all_character_matrix$`Street Fighter 5: Champion Edition`,
                      "Abigail")
 ```
 
+```{r}
+off_capcom_url <- "https://game.capcom.com/cfn/sfv/stats/dia/202011"
+
+character_order <- c("E. Honda",
+                      "Urien",
+                      "M. Bison",
+                      "Balrog",
+                      "Vega",
+                      "Ed",
+                      "Blanka",
+                      "Abigail",
+                      "Dhalsim",
+                      "Alex",
+                      "Birdie",
+                      "Falke",
+                      "Guile",
+                      "Cody",
+                      "F.A.N.G",
+                      "Zangief",
+                      "Laura",
+                      "G",
+                      "Poison",
+                      "Sagat",
+                      "Ibuki",
+                      "Karin",
+                      "Kolin",
+                      "Zeku",
+                      "Necalli",
+                      "Lucia",
+                      "Gill",
+                      "Juri",
+                      "Nash",
+                      "Chun-Li",
+                      "Ryu",
+                      "Ken",
+                      "Seth",
+                      "Kage",
+                      "R. Mika",
+                      "Sakura",
+                      "Akuma",
+                      "Menat",
+                      "Cammy",
+                      "Rashid"
+                    )
+sfv_chars <- rownames(second_matrix_games$`Street Fighter 5: Champion Edition`)
+
+sfv_chars[!(sfv_chars %in%  character_order)]
+
+
+sfv_url <- read_html(off_capcom_url)
+tbls <- html_nodes(sfv_url, "table") 
+
+
+table_out <- tbls %>% html_table()
+official_table  <- table_out[[1]]
+colnames(official_table) <- c("average", character_order)
+rownames(official_table) <- character_order
+
+## Get averages
+official_averages <- official_table[,1,drop = F]
+
+matchup_df <- official_table[,-1]
+matchup_df[matchup_df == "-"] <- NA
+
+matchup_matrix <- t((matchup_df))
+matchup_matrix <- mapply(matchup_matrix, FUN=as.numeric)
+matchup_matrix <- matrix(data=matchup_matrix, ncol=ncol(matchup_df),
+                         nrow=nrow(matchup_df))
+rownames(matchup_matrix) <- rownames(matchup_df) ;colnames(matchup_matrix) <- colnames(matchup_df)
+
+## Pull image links so I don't always have to update this by hand/
+all_images <-  tbls %>%
+        html_nodes("img") %>%
+        html_attr('src')
+
+uni_images <- unique(all_images)
+
+character_library <- cbind(character_order, uni_images)
+colnames(character_library) <- c("character", "capcom_images")
+write.csv(character_library, "sfv_character_image_library.csv", row.names = F)
+```
+
