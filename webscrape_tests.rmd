@@ -409,6 +409,9 @@ save(second_matrix_games, file = "secondary_matrix_all_games.rda")
 ```
 Character comparison function
 ```{r}
+load("secondary_matrix_all_games.rda")
+
+
 game_matrix <- all_character_matrix$`Guilty Gear Xrd REV 2`
 character_1 <- "Potemkin"
 character_2 <- "Slayer"
@@ -429,5 +432,10 @@ secondary_comparison(all_character_matrix$`Street Fighter 5: Champion Edition`,
 secondary_comparison(all_character_matrix$`Street Fighter 5: Champion Edition`,
                      "Sakura",
                      "Abigail")
+
+
+secondary_comparison(all_character_matrix$`Guilty Gear Xrd REV 2`,
+                     "Potemkin",
+                     "Slayer")
 ```
 
