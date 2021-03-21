@@ -7,6 +7,8 @@ An R project to determine who is an optimal secondary character in fighting game
 - [x] Get the matchup matrix for a single game (SFV)
 - [x] Find the best secondary for a single character (Birdie)
 - [x] Find the best secondary for a single game (SFV)
+- [ ] Acquire data for how many votes are used in each matchup
+- [ ] make seperate tabs for each quest eg. Best secondary, game heatmap, game character, secondary chart?
 - [ ] Get the shiny app to work on just one game (SFV)
 - [ ] Incorporate other games and contact reddit?
 - [ ] For SFV: Have an option in the shiny for official data or eventhub
