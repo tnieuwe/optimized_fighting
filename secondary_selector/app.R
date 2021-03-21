@@ -22,12 +22,16 @@ shinyApp(
         sidebarLayout(
             sidebarPanel(
         selectInput("game", "Choose a game:", names(game_char_list)),
-        selectInput("character", "Choose a character", choices = NULL), 
+        selectInput("character", "Choose a character", choices = NULL),
+        textInput("plotheight", "Plot Height (px)", "800"),
+        textInput("plotwidth", "Plot Width (px)", "")
         
         ),
         mainPanel(tabsetPanel(type = "tab",
                               tabPanel("Matchup Chart",
-                                       plotlyOutput("hmap")),
+                                       plotlyOutput("hmap"
+                                                    )
+                                       ),
                               tabPanel("Secondary Selector", textOutput("result")),
                               tabPanel("Secondary Chart"),
                               tabPanel("Votes per Matchup")
@@ -44,10 +48,24 @@ shinyApp(
         output$hmap <- renderPlotly({
             dat <- as.matrix(all_character_matrix[[input$game]])   
             match_frame <- ((dat - mean(dat,na.rm = T))/sd(dat,na.rm = T))
+            ## Change font size based on char num
+            font = 10
+            font <-  case_when(
+                nrow(match_frame) > 80 ~ font * .6,
+                nrow(match_frame) > 50 ~ font * .7,
+                TRUE ~ font)
+            
             heatmaply(match_frame,na_col = "black",
-                     fontsize = 10,
-                     )
+                      fontsize_row = font,
+                      fontsize_col = font,
+                     Rowv = FALSE,
+                     Colv = FALSE
+                     ) %>%
+                ## Added reactive heights
+                layout(height = input$plotheight,
+                       width = input$plotwidth)
         })
+        
         ## Observe event allows for changing options
         observeEvent(input$game, {
             game <- input$game
