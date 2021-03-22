@@ -295,6 +295,7 @@ game_chars_list["Super Smash Bros. Melee"]
 ```{r}
 
 all_character_matrix <- list()
+all_vote_matrix <- list()
 skip_games <- c("Marvel vs. Capcom 2", "Skullgirls 2nd Encore",
                 "Ultimate Marvel vs. Capcom 3",
                 "Tatsunoko vs. Capcom", "Under Night In-Birth Exe:Late[st]")
@@ -326,6 +327,10 @@ for (j in seq(game_chars_list)) {
   final_column <- results_table %>% select(Character, `Match avg.`) %>%
                     column_to_rownames(var = "Character")
   colnames(final_column) <- char
+  ##Add data frame for total votes
+  final_vote_column <- results_table %>% select(Character, `Tot. votes`) %>%
+                  column_to_rownames(var = "Character")
+  colnames(final_vote_column) <- char
   ## If this is the first column we add an extra row including the current
   ## character as an NA. That column then becomes the first `final_table`
   if (char == game_chars_name[[j]][1]) {
@@ -333,11 +338,19 @@ for (j in seq(game_chars_list)) {
     final_column <- rbind(final_column, missing_col)
     rownames(final_column)[nrow(final_column)]  <- char
     final_table <- final_column
+    ## Final vote table
+    missing_col <- NA
+    final_vote_column <- rbind(final_vote_column, missing_col)
+    rownames(final_vote_column)[nrow(final_vote_column)]  <- char
+    final_vote_table <- final_vote_column
   }else{
     ## Else just bind the tables together after properly sorting on rownames
     ind <- match(rownames(final_table), rownames(final_column))
     sorted_col <- final_column[ind,,drop = F]
     final_table <- cbind(final_table,sorted_col)
+    ## Final vote version
+    sorted_col <- final_vote_column[ind,,drop = F]
+    final_vote_table <- cbind(final_vote_table,sorted_col)
   }
   
 
@@ -345,12 +358,17 @@ for (j in seq(game_chars_list)) {
   ind <- match(colnames(final_table), rownames(final_table))
 
   ordered_final_table <- final_table[ind,] 
-  
+  ordered_final_votes <- final_vote_table[ind,]
   all_character_matrix[[game_name]] <- ordered_final_table
+  all_vote_matrix[[game_name]] <- ordered_final_votes
   
 }
 
-save(all_character_matrix, file = "all_tier_matrices.rda")
+lapply(all_vote_matrix, function(x){
+  colnames(x) <- rownames(x)
+})
+
+save(all_character_matrix, all_vote_matrix, file = "all_tier_matrices.rda")
 ```
 
 
