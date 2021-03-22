@@ -34,7 +34,8 @@ shinyApp(
                                        ),
                               tabPanel("Secondary Selector", textOutput("result")),
                               tabPanel("Secondary Chart"),
-                              tabPanel("Votes per Matchup")
+                              tabPanel("Votes per Matchup",
+                                       plotlyOutput("vmap"))
             
         )
         )
@@ -51,7 +52,7 @@ shinyApp(
             ## Change font size based on char num
             font = 10
             font <-  case_when(
-                nrow(match_frame) > 80 ~ font * .6,
+                nrow(match_frame) > 80 ~ font * .57,
                 nrow(match_frame) > 50 ~ font * .7,
                 TRUE ~ font)
             
@@ -59,8 +60,32 @@ shinyApp(
                       fontsize_row = font,
                       fontsize_col = font,
                      Rowv = FALSE,
-                     Colv = FALSE
+                     Colv = FALSE,
+                     main = "Matchup favorability by Z-scores; How character X does vs character Y",
+                     ylab = "Character Y",
+                     xlab = "Character X"
                      ) %>%
+                ## Added reactive heights
+                layout(height = input$plotheight,
+                       width = input$plotwidth)
+        })
+        
+        output$vmap <- renderPlotly({
+            vote_frame <- as.matrix(all_vote_matrix[[input$game]])   
+            ## Change font size based on char num
+            font = 10
+            font <-  case_when(
+                nrow(vote_frame) > 80 ~ font * .6,
+                nrow(vote_frame) > 50 ~ font * .7,
+                TRUE ~ font)
+            
+            heatmaply(vote_frame,na_col = "black",
+                      fontsize_row = font,
+                      fontsize_col = font,
+                      Rowv = FALSE,
+                      Colv = FALSE,
+                      main = "Votes per Matchup"
+            ) %>%
                 ## Added reactive heights
                 layout(height = input$plotheight,
                        width = input$plotwidth)
