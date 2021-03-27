@@ -122,7 +122,7 @@ shinyApp(
             initial_tiers_row <- initial_tiers %>% ungroup() %>%
                 select(Characters, Clusters) %>% 
                 column_to_rownames(var = "Characters")
-            
+            colnames(initial_tiers_row) <- "Tiers"
             heatmaply(match_frame,na_col = "black",
                       fontsize_row = font,
                       fontsize_col = font,
@@ -208,11 +208,11 @@ shinyApp(
                 mutate(characters_per_tier = paste0(Characters, collapse = ", ")) %>%
                 group_by(characters_per_tier)
             final_tier_list <- initial_tiers %>%
-                summarise(`Cluster Mean Matchup` = mean(average_matchup),
-                          `Clusters` = mean(clusts)) %>%
-                select(Clusters, `Cluster Mean Matchup`, `Ordered Tier Characters` = "characters_per_tier") %>%
-                arrange(desc(`Cluster Mean Matchup`))
-            final_tier_list$Clusters <- LETTERS[seq(nrow(final_tier_list))]
+                summarise(`Tier Mean Matchup` = mean(average_matchup),
+                          `Tiers` = mean(clusts)) %>%
+                select(Tiers, `Tier Mean Matchup`, `Ordered Tier Characters` = "characters_per_tier") %>%
+                arrange(desc(`Tier Mean Matchup`))
+            final_tier_list$Tiers <- LETTERS[seq(nrow(final_tier_list))]
             final_tier_list
         })
         
