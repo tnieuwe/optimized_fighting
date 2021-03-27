@@ -6,12 +6,12 @@
 #
 #    http://shiny.rstudio.com/
 #
-library(pheatmap)
 library(shiny)
 library(tidyverse)
 library(plotly)
 library(shinyHeatmaply)
 library(heatmaply)
+library(faq)
 
 load("all_tier_matrices.rda")
 load("secondary_matrix_all_games.rda")
@@ -54,8 +54,8 @@ shinyApp(
         selectInput("character", "Choose a character", choices = NULL),
         selectInput("second_alg", "What secondary algorithm do you want?", c("Complimentary Characters",
                                                                              "Pocket Characters")),
-        textInput("plotheight", "Plot Height (px)", "800"),
-        textInput("plotwidth", "Plot Width (px)", "")
+        textInput("plotheight", "Heatmap Height (px)", "800"),
+        textInput("plotwidth", "Heatmap Width (px)", "")
         
         ),
         mainPanel(tabsetPanel(type = "tab",
@@ -64,9 +64,10 @@ shinyApp(
                                                     )
                                        ),
                               tabPanel("Secondary Selector", dataTableOutput("second")),
-                              tabPanel("Secondary Chart"),
+                              tabPanel("Matchup Variance per Game (balance)", plotOutput("hist")),
                               tabPanel("Votes per Matchup",
-                                       plotlyOutput("vmap"))
+                                       plotlyOutput("vmap")),
+                              tabPanel("FAQ", faqOutput("faq_out"))
             
         )
         )
@@ -78,8 +79,10 @@ shinyApp(
         })
         
         output$hmap <- renderPlotly({
-            dat <- as.matrix(all_character_matrix[[input$game]])   
-            match_frame <- ((dat - mean(dat,na.rm = T))/sd(dat,na.rm = T))
+            dat <- as.matrix(all_character_matrix[[input$game]])
+            ## Removing Z-score for the time being
+            #match_frame <- ((dat - mean(dat,na.rm = T))/sd(dat,na.rm = T))
+            match_frame <- dat
             ## Change font size based on char num
             font = 10
             font <-  case_when(
@@ -92,7 +95,7 @@ shinyApp(
                       fontsize_col = font,
                      Rowv = FALSE,
                      Colv = FALSE,
-                     main = "Matchup favorability by Z-scores; How character X does vs character Y",
+                     main = "Matchup Favorability; How character X does vs character Y (X-Y notation)",
                      ylab = "Character Y",
                      xlab = "Character X"
                      ) %>%
@@ -122,6 +125,28 @@ shinyApp(
                        width = input$plotwidth)
         })
         
+        output$hist <- renderPlot({
+            list_var  <- lapply(all_character_matrix, FUN = function(x){
+                var(as.vector(as.matrix(x)), na.rm = T)
+            })
+            df_var <- as.data.frame(t(as.data.frame(list_var)))
+            game_var <-  round(var(as.vector(as.matrix(all_character_matrix[[input$game]])), na.rm = TRUE), 3)
+            ggplot(df_var, aes(V1)) +
+                geom_histogram(stat="bin", color = "black", fill = "white") +
+                theme_classic() +
+                geom_vline(xintercept = game_var,
+                           color = "red",
+                           linetype="dotted", size = 1.5) +
+                labs(title = "Variance of Matchups Histogram",
+                     subtitle = "How balanced a game is across the cast") +
+                xlab("Variation") +
+                ylab("Count of Games") +
+                geom_text(x = 1.5, y = 10,
+                          label = paste("Variance of game: ", game_var), size = 10)
+        }, height = 400,
+        width = 700)
+        
+        
         output$second <- renderDataTable({
             # second_matrix_selected <- ifelse(input$second_alg %in% "Complimentary Characters",
             #                                  second_matrix_games,
@@ -139,6 +164,23 @@ shinyApp(
             game <- input$game
             characters <- game_char_list[[game]]
             updateSelectInput(session, "character", "Choose a character", characters)
+        })
+        ## Make FAQ dataframe
+       output$faq_out <- renderFaq({
+                            faq_df <- data.frame(
+                                question = c("What are fighting games and what is this?",
+                                              "Where is the data from?",
+                                              "Is there a github repository for this project?",
+                                              "How are secondary scores calculated?",
+                                             "What's the difference between 'Complimentary Characters' and 'Pocket Characters'"
+                                             ),
+                                answer = c("Basically, fighting games are zero-sum videogames that often pit two players against each other in virtual combat. There are many subgenres of fighting games but a common theme across them is multiple characters to select as fighters. One of the goals in developing fighting games is to make characters have unique playstyles, this is to give players more options and to generate unique character interactiosn. While this makes the games more interesting it also results in purposefully unequal gameplay as different characters have different tools. Therefore whenever two different characters fight eachother, often one character has the edge over the other in the 'matchup' as they either have better tools or their playstyle/gameplan is more effective against the character they are playing against (Zoners beat Grapplers who beat Rush Down who beat Zoners). As a result each character has a unique matchup againast every other character in the game and understanding these matchups is often vital to doing well. However, some people often find there are matchups so bad for their character that they decide to pick up a second character to play those unfavorable matches with. And finding the best characters to cover another characters weaknesses is the exact reason I made this shiny app.",
+                                           "The data is from EventHubs.com, Eventhubs tier lists are generated through players voting on how favorable or unfavorable a given matchup is for a character in a game. You vote by giving how much in favor a matchup is eg. an even matchup is 5-5, a favored matchup is 6-4 and a lopsided matchup is 8-2. I heavily suggest exploring the website as it is a great source of information, an account is required to vote, but if you have a unique understanding of a matchup its a good place to vote. Though realize these are not expert opinions in this data, because anyone can vote.",
+                                           "Yes: https://github.com/tnieuwe/optimized_fighting",
+                                           "This formula goes through every character in the matchup matrix and subtracts their matchup score from the main character's matchup score. So if the secondary character has a matchup agaisnt another character that is good (say a score of 7) when compared to the main character (say a score of 4), the resulting number would be -3. We then change the sign of all the differences (the number would now be 3) and then sum across all matchups. We do this for every character in the matchup chart. This results in a number that we can order the characters on based on how they perform in matchups relative to the main character.",
+                                           "Complimentary Characters is made to find characters that compliment eachother well across both their matchup spreads and is described in the above formula. Pocket Characters is better at selecting a character that exclusively covers the weaknesses of the main characters, not really focusing on if the main character covers the secondary character's weaknesses. This is done by removing all negative matchups in the secondary score analysis before summing.")
+                            )
+                            faq(faq_df)
         })
     }
 )
