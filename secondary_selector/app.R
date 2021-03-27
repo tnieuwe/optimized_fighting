@@ -54,6 +54,8 @@ shinyApp(
         selectInput("character", "Choose a character", choices = NULL),
         selectInput("second_alg", "What secondary algorithm do you want?", c("Complimentary Characters",
                                                                              "Pocket Characters")),
+        checkboxInput("t_f_tiers", "Cluster heatmap on tiers?", FALSE),
+        sliderInput("num_tiers", "How many tiers?", 2, 7, 3),
         textInput("plotheight", "Heatmap Height (px)", "800"),
         textInput("plotwidth", "Heatmap Width (px)", "")
         
@@ -64,6 +66,7 @@ shinyApp(
                                                     )
                                        ),
                               tabPanel("Secondary Selector", dataTableOutput("second")),
+                              tabPanel("Calculate Tiers", dataTableOutput("tiers_out")),
                               tabPanel("Matchup Variance per Game (balance)", plotOutput("hist")),
                               tabPanel("Votes per Matchup",
                                        plotlyOutput("vmap")),
@@ -77,7 +80,7 @@ shinyApp(
         output$result <- renderText({
             paste("You chose", paste(input$game,input$character, sep = ":"))
         })
-        
+        ### Matchup heatmap
         output$hmap <- renderPlotly({
             dat <- as.matrix(all_character_matrix[[input$game]])
             ## Removing Z-score for the time being
@@ -89,7 +92,7 @@ shinyApp(
                 nrow(match_frame) > 80 ~ font * .57,
                 nrow(match_frame) > 50 ~ font * .7,
                 TRUE ~ font)
-            
+            if (input$t_f_tiers == FALSE) {
             heatmaply(match_frame,na_col = "black",
                       fontsize_row = font,
                       fontsize_col = font,
@@ -102,8 +105,40 @@ shinyApp(
                 ## Added reactive heights
                 layout(height = input$plotheight,
                        width = input$plotwidth)
+            } else{
+            dendo <- hclust(d=dist(colMeans(match_frame, na.rm = TRUE), method = "euclidian"), method = "complete")
+            
+            clusts <- cutree(dendo, k = input$num_tiers)
+            
+            average_matchup <- colMeans(match_frame, na.rm = TRUE)
+            
+            initial_tiers <- as.data.frame(cbind(average_matchup, clusts)) %>%
+                rownames_to_column(var = "Characters") %>%
+                group_by(clusts) %>%
+                mutate(characters_per_tier = paste0(Characters, collapse = ", ")) %>%
+                group_by(characters_per_tier)
+            initial_tiers$Clusters <- LETTERS[initial_tiers$clusts]
+            
+            initial_tiers_row <- initial_tiers %>% ungroup() %>%
+                select(Characters, Clusters) %>% 
+                column_to_rownames(var = "Characters")
+            
+            heatmaply(match_frame,na_col = "black",
+                      fontsize_row = font,
+                      fontsize_col = font,
+                      Rowv = dendo,
+                      Colv = FALSE,
+                      row_side_colors = (initial_tiers_row),
+                      main = "Matchup Favorability; How character X does vs character Y (X-Y notation)",
+                      ylab = "Character Y",
+                      xlab = "Character X" 
+                ) %>%
+                ## Added reactive heights
+                layout(height = input$plotheight,
+                       width = input$plotwidth)
+            }
         })
-        
+        ### Vote map
         output$vmap <- renderPlotly({
             vote_frame <- as.matrix(all_vote_matrix[[input$game]])   
             ## Change font size based on char num
@@ -124,7 +159,7 @@ shinyApp(
                 layout(height = input$plotheight,
                        width = input$plotwidth)
         })
-        
+        ### Variance histogram
         output$hist <- renderPlot({
             list_var  <- lapply(all_character_matrix, FUN = function(x){
                 var(as.vector(as.matrix(x)), na.rm = T)
@@ -146,7 +181,7 @@ shinyApp(
         }, height = 400,
         width = 700)
         
-        
+        ### Secondary Selector
         output$second <- renderDataTable({
             # second_matrix_selected <- ifelse(input$second_alg %in% "Complimentary Characters",
             #                                  second_matrix_games,
@@ -158,6 +193,28 @@ shinyApp(
             }
             secondary_ordered(second_matrix_selected[[input$game]], input$character)
             })
+        ### Tier List Generator
+        output$tiers_out <- renderDataTable({
+            match_frame <- all_character_matrix[[input$game]]
+            dendo <- hclust(d=dist(colMeans(match_frame, na.rm = TRUE), method = "euclidian"), method = "complete")
+            
+            clusts <- cutree(dendo, k = input$num_tiers)
+            
+            average_matchup <- colMeans(match_frame, na.rm = TRUE)
+            
+            initial_tiers <- as.data.frame(cbind(average_matchup, clusts)) %>%
+                rownames_to_column(var = "Characters") %>%
+                group_by(clusts) %>%
+                mutate(characters_per_tier = paste0(Characters, collapse = ", ")) %>%
+                group_by(characters_per_tier)
+            final_tier_list <- initial_tiers %>%
+                summarise(`Cluster Mean Matchup` = mean(average_matchup),
+                          `Clusters` = mean(clusts)) %>%
+                select(Clusters, `Cluster Mean Matchup`, `Ordered Tier Characters` = "characters_per_tier") %>%
+                arrange(desc(`Cluster Mean Matchup`))
+            final_tier_list$Clusters <- LETTERS[seq(nrow(final_tier_list))]
+            final_tier_list
+        })
         
         ## Observe event allows for changing options
         observeEvent(input$game, {
