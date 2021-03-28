@@ -48,8 +48,10 @@ secondary_ordered <- function(second_tabl, char){
 
 shinyApp(
     ui = fluidPage( 
+        titlePanel("Eventhubs Fighting Game Data"),
         sidebarLayout(
             sidebarPanel(
+        "This tool uses data acquired from Eventhub's publically vote upon fighting game matchup data. Using this data we can generate full matchup charts, matchup based tier lists, and a tool that helps a person pick their main's best secondary character. Publically voted upon data is of course not perfect, but it is interesting to see what people think.",
         selectInput("game", "Choose a game:", names(game_char_list)),
         selectInput("character", "Choose a character", choices = NULL),
         selectInput("second_alg", "What secondary algorithm do you want?", c("Complimentary Characters",
@@ -66,8 +68,8 @@ shinyApp(
                                                     )
                                        ),
                               tabPanel("Secondary Selector", dataTableOutput("second")),
-                              tabPanel("Calculate Tiers", dataTableOutput("tiers_out")),
-                              tabPanel("Matchup Variance per Game (balance)", plotOutput("hist")),
+                              tabPanel("Calculate Tiers", dataTableOutput("tiers_out"), "Tiers are generated using hierarchical clustering on the mean matchup for every character. These tiers exclusively look at all matchups and do not take into account the meta which greatly influences tier lists due to character popularity."),
+                              tabPanel("Matchup Variance per Game (balance)", plotOutput("hist"), "By using the variance of the matchup matrices we can see how 'balanced' a game is. If matchups are relatively even across the board variance will be low, if there are many skewed matdchups variance will be high. See Smash Melee/Brawl."),
                               tabPanel("Votes per Matchup",
                                        plotlyOutput("vmap")),
                               tabPanel("FAQ", faqOutput("faq_out"))
@@ -98,7 +100,7 @@ shinyApp(
                       fontsize_col = font,
                      Rowv = FALSE,
                      Colv = FALSE,
-                     main = "Matchup Favorability; How character X does vs character Y (X-Y notation)",
+                     main = "Matchup Chart; How character X does vs character Y (X-Y notation)",
                      ylab = "Character Y",
                      xlab = "Character X"
                      ) %>%
@@ -231,7 +233,7 @@ shinyApp(
                                               "How are secondary scores calculated?",
                                              "What's the difference between 'Complimentary Characters' and 'Pocket Characters'"
                                              ),
-                                answer = c("Basically, fighting games are zero-sum videogames that often pit two players against each other in virtual combat. There are many subgenres of fighting games but a common theme across them is multiple characters to select as fighters. One of the goals in developing fighting games is to make characters have unique playstyles, this is to give players more options and to generate unique character interactiosn. While this makes the games more interesting it also results in purposefully unequal gameplay as different characters have different tools. Therefore whenever two different characters fight eachother, often one character has the edge over the other in the 'matchup' as they either have better tools or their playstyle/gameplan is more effective against the character they are playing against (Zoners beat Grapplers who beat Rush Down who beat Zoners). As a result each character has a unique matchup againast every other character in the game and understanding these matchups is often vital to doing well. However, some people often find there are matchups so bad for their character that they decide to pick up a second character to play those unfavorable matches with. And finding the best characters to cover another characters weaknesses is the exact reason I made this shiny app.",
+                                answer = c("Basically, fighting games are zero-sum videogames that often pit two players against each other in virtual combat. There are many subgenres of fighting games but a common theme across them is multiple characters to select as fighters. One of the goals in developing fighting games is to make characters have unique playstyles, this is to give players more options and to generate unique character interactions While this makes the games more interesting it also results in purposefully unequal gameplay as different characters have different tools. Therefore, whenever two different characters fight eachother, often one character has the edge over the other in the 'matchup' as they either have better tools or their playstyle/gameplan is more effective against the character they are playing against (Zoners beat Grapplers who beat Rush Down who beat Zoners). As a result each character has a unique matchup againast every other character in the game and understanding these matchups is often vital to doing well. However, some people often find there are matchups so bad for their character that they decide to pick up a second character to play those unfavorable matches with. And finding the best characters to cover another characters weaknesses is the exact reason I made this shiny app.",
                                            "The data is from EventHubs.com, Eventhubs tier lists are generated through players voting on how favorable or unfavorable a given matchup is for a character in a game. You vote by giving how much in favor a matchup is eg. an even matchup is 5-5, a favored matchup is 6-4 and a lopsided matchup is 8-2. I heavily suggest exploring the website as it is a great source of information, an account is required to vote, but if you have a unique understanding of a matchup its a good place to vote. Though realize these are not expert opinions in this data, because anyone can vote.",
                                            "Yes: https://github.com/tnieuwe/optimized_fighting",
                                            "This formula goes through every character in the matchup matrix and subtracts their matchup score from the main character's matchup score. So if the secondary character has a matchup agaisnt another character that is good (say a score of 7) when compared to the main character (say a score of 4), the resulting number would be -3. We then change the sign of all the differences (the number would now be 3) and then sum across all matchups. We do this for every character in the matchup chart. This results in a number that we can order the characters on based on how they perform in matchups relative to the main character.",
