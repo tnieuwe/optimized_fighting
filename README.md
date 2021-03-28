@@ -1,6 +1,8 @@
 # optimized_fighting
 An R project to determine who is an optimal secondary character in fighting games using matchup knowledge webscraped from https://www.eventhubs.com/tiers/.
 
+ The shiny app can be accessed here: https://32tim32.shinyapps.io/Fighting_Game_Secondary_Selector/
+
 ## What are fighting games and what is this?
 Basically, fighting games are zero-sum videogames that often pit two players against each other in virtual combat. There are many subgenres of fighting games but a common theme across them is multiple characters to select as fighters. One of the goals in developing fighting games is to make characters have unique playstyles, this is to give players more options and to generate unique character interactions. While this makes the games more interesting it also results in purposefully unequal gameplay as different characters have different tools. Therefore whenever two different characters fight eachother, often one character has the edge over the other in the "matchup" as they either have better tools or their playstyle/gameplan is more effective against the character they are playing against (Zoners beat Grapplers who beat Rush Down who beat Zoners). As a result each character has a unique matchup against every other character in the game and understanding these matchups is often vital to doing well. However, some people often find there are matchups so bad for their character that they decide to pick up a second character to play those unfavorable matches with. And finding the best characters to cover another characters weaknesses is the exact reason I made this shiny app.
 
@@ -27,6 +29,13 @@ This Shiny App has several functions that I will list below:
  * A heatmap that simply shows how many votes each matchup has
 ## Data source:
  Eventhubs tier lists are generated through players voting on how favorable or unfavorable a given matchup is for a character in a game. You vote by giving how much in favor a matchup is eg. an even matchup is 5-5, a favored matchup is 6-4 and a lopsided matchup is 8-2. I heavily suggest exploring the website as it is a great source of information, an account is required to vote, but if you have a unique understanding of a matchup its a good place to vote.
+
+## Files in scrapers_and_functions and order they need to be ran in
+1. **game_chars_list_maker.r**: This file scrapes the main Eventhubs website to get data on game names and character names required for later analyses. Output file is all_games_n_chars.rda. 
+*Note*: Currently this file should not be ran because the smash melee and smash brawl pages are broken on Eventhubs.
+2. **all_character_matrix_maker.r**: This file scrapes the matchup data from Eventhub for ever character in everygame. This generates the matrices used in the matchup heatmaps. The output of this file is all_tier_matrices.rda.
+3. **secondary_matrix_generator.r**: This file uses the matchup matrices for each game to generate a matrix of how well each character performs as a secondary to a given main character. The output of this file is secondary_matrix_all_games.rda
+4. **secondary_ordered.r**: This file is the function used to properly order the secondary info. It is the function version of the **Secondary Selector** tab.
 
 ## Packages used
 * **Shiny**: To make the shiny app
