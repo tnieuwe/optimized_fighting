@@ -19,6 +19,8 @@ all_games <- names(all_character_matrix)
 
 game_char_list <- lapply(all_character_matrix, colnames)
 
+intro <- "This tool uses data acquired from Eventhub's publically voted upon fighting game matchup data. Using this data we can generate full matchup charts, matchup based tier lists, and a tool that helps a person pick their main's best secondary character. Publically voted upon data is of course not perfect, but it is interesting to see what people think."
+
 
 secondary_ordered <- function(second_tabl, char){
     ### By using the previously generated table we can use this functiont to select
@@ -50,41 +52,69 @@ shinyApp(
     ui = fluidPage(
         theme = shinythemes::shinytheme("readable"),
         titlePanel("Eventhubs Fighting Game Data"),
-        sidebarLayout(
-            sidebarPanel(
-        "This tool uses data acquired from Eventhub's publically voted upon fighting game matchup data. Using this data we can generate full matchup charts, matchup based tier lists, and a tool that helps a person pick their main's best secondary character. Publically voted upon data is of course not perfect, but it is interesting to see what people think.",
-        selectInput("game", "Choose a game:", names(game_char_list)),
-        selectInput("character", "Choose a character", choices = NULL),
-        selectInput("second_alg", "What secondary algorithm do you want?", c("Complimentary Characters",
-                                                                             "Pocket Characters")),
-        checkboxInput("t_f_tiers", "Cluster heatmap on tiers?", FALSE),
-        sliderInput("num_tiers", "How many tiers?", 2, 7, 3),
-        textInput("plotheight", "Heatmap Height (px)", "800"),
-        textInput("plotwidth", "Heatmap Width (px)", "")
-        
+        ## Saved from here
+        tabsetPanel(type = "tabs",
+                    tabPanel("Matchup_chart",
+                             sidebarPanel(intro,
+                                 selectInput("game", "Choose a game:", names(game_char_list)),
+                                 checkboxInput("t_f_tiers", "Cluster heatmap on tiers?", FALSE),
+                                 sliderInput("num_tiers_heat", "How many tiers?", 2, 7, 3),
+                                 textInput("plotheight_heat", "Heatmap Height (px)", "800"),
+                                 textInput("plotwidth_heat", "Heatmap Width (px)", "")
+                             ),
+                             mainPanel(
+                                 plotlyOutput("hmap"
+                                 )
+                             )
+                             ),
+                    tabPanel("Secondary Selector",
+                             sidebarPanel(
+                                 intro,
+                                 selectInput("game", "Choose a game:", names(game_char_list)),
+                                 selectInput("character", "Choose a character", choices = NULL),
+                                 selectInput("second_alg", "What secondary algorithm do you want?", c("Complimentary Characters",
+                                                                                                      "Pocket Characters"))
+                             ),
+                             mainPanel( p("Secondary Score: A calculate value of how good a secondary a character is to a main, the higher the better. Used to order Secondary Rank."),
+                                        p("Tier Rank Change: Determines if a character outperforms their position in the tier list by secondary score"),
+                                        "See FAQ and https://github.com/tnieuwe/optimized_fighting for further information",
+                                        dataTableOutput("second")
+                                        )),
+                    tabPanel("Calculate Tiers",
+                             sidebarPanel(
+                                 selectInput("game", "Choose a game:", names(game_char_list)),
+                                 sliderInput("num_tiers", "How many tiers?", 2, 7, 3)
+                             ),
+                             mainPanel(
+                                 dataTableOutput("tiers_out"),
+                                 "Tiers are generated using hierarchical clustering on the mean matchup for every character. These tiers exclusively look at all matchups and do not take into account the meta which greatly influences tier lists due to character popularity."
+                             )
+                             ),
+                    tabPanel("Matchup Variance per Game (balance)",
+                             sidebarPanel(
+                                 selectInput("game", "Choose a game:", names(game_char_list))
+                             ),
+                             mainPanel(
+                                 plotOutput("hist"),
+                                 "By using the variance of the matchup matrices we can see how 'balanced' a game is. If matchups are relatively even across the board variance will be low, if there are many skewed matdchups variance will be high. See Smash Melee/Brawl."
+                             )
+                             ),
+                    tabPanel("Vote per Matchup",
+                             sidebarPanel(
+                                 selectInput("game", "Choose a game:", names(game_char_list)),
+                                 
+                             ),
+                             mainPanel(
+                                 plotlyOutput("vmap")
+                             )
+                             ),
+                    tabPanel("FAQ",
+                             sidebarPanel(
+                                 intro
+                             ),
+                             mainPanel(faqOutput("faq_out")))
+                             )
         ),
-        mainPanel(tabsetPanel(type = "tab",
-                              tabPanel("Matchup Chart",
-                                       plotlyOutput("hmap"
-                                                    )
-                                       ),
-                              tabPanel("Secondary Selector",
-                                       p("Secondary Score: A calculate value of how good a secondary a character is to a main, the higher the better. Used to order Secondary Rank."),
-                                       
-                                       p("Tier Rank Change: Determines if a character outperforms their position in the tier list by secondary score"),
-                                       "",
-                                       "See FAQ and https://github.com/tnieuwe/optimized_fighting for further information",
-                                       dataTableOutput("second")),
-                              tabPanel("Calculate Tiers", dataTableOutput("tiers_out"), "Tiers are generated using hierarchical clustering on the mean matchup for every character. These tiers exclusively look at all matchups and do not take into account the meta which greatly influences tier lists due to character popularity."),
-                              tabPanel("Matchup Variance per Game (balance)", plotOutput("hist"), "By using the variance of the matchup matrices we can see how 'balanced' a game is. If matchups are relatively even across the board variance will be low, if there are many skewed matdchups variance will be high. See Smash Melee/Brawl."),
-                              tabPanel("Votes per Matchup",
-                                       plotlyOutput("vmap")),
-                              tabPanel("FAQ", faqOutput("faq_out"))
-            
-        )
-        )
-        )
-    ),
     server = function(input, output, session) {
         output$result <- renderText({
             paste("You chose", paste(input$game,input$character, sep = ":"))
@@ -112,12 +142,12 @@ shinyApp(
                      xlab = "Character X"
                      ) %>%
                 ## Added reactive heights
-                layout(height = input$plotheight,
-                       width = input$plotwidth)
+                layout(height = input$plotheight_heat,
+                       width = input$plotwidth_heat)
             } else{
             dendo <- hclust(d=dist(colMeans(match_frame, na.rm = TRUE), method = "euclidian"), method = "complete")
             
-            clusts <- cutree(dendo, k = input$num_tiers)
+            clusts <- cutree(dendo, k = input$num_tiers_heat)
             
             average_matchup <- colMeans(match_frame, na.rm = TRUE)
             
@@ -143,8 +173,8 @@ shinyApp(
                       xlab = "Character X" 
                 ) %>%
                 ## Added reactive heights
-                layout(height = input$plotheight,
-                       width = input$plotwidth)
+                layout(height = input$plotheight_heat,
+                       width = input$plotwidth_heat)
             }
         })
         ### Vote map
