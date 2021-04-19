@@ -1,4 +1,5 @@
 # optimized_fighting
+![Super Smash Brother Melee With 5 Tiers](https://github.com/tnieuwe/optimized_fighting/blob/main/pictures/melee_screencap.png)
 An R project to determine who is an optimal secondary character in fighting games using matchup knowledge webscraped from https://www.eventhubs.com/tiers/.
 
  The shiny app can be accessed here: https://32tim32.shinyapps.io/Fighting_Game_Secondary_Selector/
