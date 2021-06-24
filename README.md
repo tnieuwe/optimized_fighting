@@ -22,7 +22,7 @@ This Shiny App has several functions that I will list below:
  * Secondary Tier list: The order of characters based on the secondary score
  * Tier Rank Change: The purpose of secondary rank change is to deal with the inherent problem of this project. No matter who you're playing, logically speaking the best secondary for you to pick up in fighting games is normally the best character in the game, because they have the best matchups across the entire cast. We realized this problem early on, and so we came up with this solution. We compare every character to their position in the current tier list, and changes in their position reflect if the outperform or underperform your character in certain matchups. For example if a character moves up two spots in the secondary rank, that means given the main character's matchup chart, that secondary character outperforms other characters in covering the main character's weakness.
 ### Calculate Tiers:
- *  This tool allows you to "mathmatically" determine the tier placements of characters based on their mean matchup.
+ *  This tool allows you to "mathematically" determine the tier placements of characters based on their mean matchup.
  *  The tool uses the mean matchup value for every character, and through hierarchical clustering on the Euclidian distance between the values (literally just grouping numbers by how close they are) generates clusters of characters. Using the **How many tiers?** option you are allowed to explore what the distribution of characters look like for a given number of tiers.
  *  This functionality is also available on the Matchup Chart if you select **Cluster heatmap on tiers?**
 ### Matchup Variance per Game (balance)
